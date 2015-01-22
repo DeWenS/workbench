@@ -569,3 +569,27 @@ function workbench_moderation_update_7007() {
     '%to' => $transition->to_name,
   ));
 }
+
+function workbench_moderation_update_7008() {
+  $res = db_query("SELECT
+node.nid,
+node.title,
+node.status as node_status,
+workbench_moderation_node_history.published as wb_published,
+workbench_moderation_node_history.state as wb_state
+FROM
+workbench_moderation_node_history
+INNER JOIN node ON node.vid = workbench_moderation_node_history.vid
+INNER JOIN node_revision ON node_revision.vid = workbench_moderation_node_history.vid
+WHERE
+workbench_moderation_node_history.published <> node_revision.status
+AND
+workbench_moderation_node_history.current = 1")->fetchAllKeyed();
+
+  foreach ($res as $nid => $title) {
+    $node = node_load($nid);
+    $node->status = !$node->status;
+    node_save($node);
+  }
+
+}
